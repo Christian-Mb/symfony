@@ -15,8 +15,10 @@
                                 <h5 class="card-title" style="font-size: 2rem; font-weight: bold">
                                     <a href="{{ path('blog_show',{'id':article.id}) }}">{{ article.title }}</a>
                                 </h5>
-                                <h6 class="card-title">
-                                    <div class="metadata">Ecrit le {{ article.createdAt | date('D/M/Y') }} à {{ article.createdAt | date('H:i')  }} dans la catégorie {{article.category.title}} par {{ article.author }}</div>
+                                <h6 class="card-title" style="">
+                                <div
+                                        class="metadata">Ecrit le {{ article.createdAt | date('D/M/Y') }} à {{ article.createdAt | date('H:i')  }} dans la catégorie {{article.category.title}} par {{ article.author }}
+                                </div>
 
                                 </h6>
                                 <div class="image" mb-4>
@@ -29,12 +31,10 @@
                     </div>
                 </article>
             {% endfor %}
-
-
         </section>
     </div>
 
 
-        </section>
-    </div>
+
+
 {% endblock %}
