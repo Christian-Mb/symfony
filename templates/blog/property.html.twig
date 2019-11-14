@@ -1,0 +1,9 @@
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">
+            <a href="{{ 'blog_show',{slug:article.slug, id:article.id} }}">{{ article.title }}</a>
+            <div class="metadata">Ecrit le {{ article.createdAt | date('D/M/Y') }} à {{ article.createdAt | date('H:i')  }} dans la catégorie {{article.category.title}} par {{ article.author }}</div>
+        </h5>
+        <p class="card-text">{{ article.content }}</p>
+    </div>
+</div>

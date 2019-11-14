@@ -3,17 +3,38 @@
 {% block title %}Hello BlogController!{% endblock %}
 
 {% block body %}
-       <section class="article">
-           {% for article in articles %}
-           <article>
-               <h2>{{ article.title }}</h2>
-               <div class="metadata">Ecrit le {{ article.createdAt | date('D/M/Y') }} à {{ article.createdAt | date('H:i')  }} dans la catégorie {{article.category.title}} par {{ article.author }}</div>
-               <div class="content"><img src="{{ article.image }}" alt="">
-                   {{ article.content | raw }}
-                   <a href="{{ path('blog_show',{'id': article.id}) }}" class="btn btn-primary">Lire la suite</a></div>
-           </article>
-           {% endfor %}
+    <div class="container mt-4">
+        <h1>Voir tous nos articles</h1>
+        <section class="article">
+
+            {% for article in articles %}
+                <article>
+                    <div class="cold md-4">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-size: 2rem; font-weight: bold">
+                                    <a href="{{ path('blog_show',{'id':article.id}) }}">{{ article.title }}</a>
+                                </h5>
+                                <h6 class="card-title">
+                                    <div class="metadata">Ecrit le {{ article.createdAt | date('D/M/Y') }} à {{ article.createdAt | date('H:i')  }} dans la catégorie {{article.category.title}} par {{ article.author }}</div>
+
+                                </h6>
+                                <div class="image" mb-4>
+                                    <div class="content"><img src="{{ article.image }}" alt="">
+                                </div>
+
+                                <p class="card-text">{{ article.content | raw }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
 
 
-       </section>
+        </section>
+    </div>
+
+
+        </section>
+    </div>
 {% endblock %}
