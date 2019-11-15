@@ -12,20 +12,20 @@
                     <div class="cold md-4">
                         <div class="card mb-4">
                             <div class="card-body">
-                                <h5 class="card-title" style="font-size: 2rem; font-weight: bold">
+                                <h5 class="card-title" style="font-size: 2rem; font-weight: bold" align="center">
                                     <a href="{{ path('blog_show',{'id':article.id}) }}">{{ article.title }}</a>
                                 </h5>
                                 <h6 class="card-title" style="">
                                 <div
-                                        class="metadata">Ecrit le {{ article.createdAt | date('D/M/Y') }} à {{ article.createdAt | date('H:i')  }} dans la catégorie {{article.category.title}} par {{ article.author }}
+                                        class="metadata" align="center">Ecrit le {{ article.createdAt | date('D/M/Y') }} à {{ article.createdAt | date('H:i')  }} dans la catégorie {{article.category.title}} par {{ article.author }}
                                 </div>
 
                                 </h6>
-                                <div class="image" mb-4>
+                                <div class="card-img-top mb-4" align="center">
                                     <div class="content"><img src="{{ article.image }}" alt="">
                                 </div>
 
-                                <p class="card-text">{{ article.content | raw }}</p>
+                                <p class="card-text" align="">{{ article.content | raw }}</p>
                             </div>
                         </div>
                     </div>

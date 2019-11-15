@@ -1,39 +1,63 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-    <article>
-        <h2>{{ article.title }}</h2>
-        <div class="metadata">Ecrit le {{ article.createdAt | date('d/m/Y') }} à {{ article.createdAt | date('H:i')  }} dans la catégorie {{article.category.title}}</div>
-        <div class="content"><img src="{{ article.image }}" alt="">
-            {{ article.content | raw }}
-           </div>
-    </article>
-    <hr>
-   <section id="commentaire">
-       <h1>{{ article.comments | length}} Commentaires</h1>
-       {% for comment in article.comments %}
-
-            <div class="commentaire">
-                <div class="row">
-                    <div class="col-3">
-                        {{ comment.author }}(<small>{{ comment.createdAt | date('d/m/y à h:i') }}</small>
-                    </div>
-                    <div class="col">
-                        {{ comment.Content | raw }}
-                    </div>
+    <div class="container mt-4">
+        <div class="cold md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <article>
+                        <h2 align="center">{{ article.title }}</h2>
+                        <div class="metadata mb-4" align="center">Ecrit le {{ article.createdAt | date('d/m/Y') }} à {{ article.createdAt | date('H:i')  }} dans la catégorie {{article.category.title}}</div>
+                        <div class="content mb-4" align="center"><img src="{{ article.image }}" alt="">
+                        </div>
+                        <div class="content mb-4"align="justify">
+                            {{ article.content | raw }}
+                        </div>
+                    </article>
                 </div>
             </div>
-       {% endfor %}
-        {% if app.user %}
-       {{ form_start(commentForm) }}
-       {{ form_row(commentForm.author,{'attr':{'placeholder':'Votre nom'}}) }}
-       {{ form_row(commentForm.content,{'attr':{'placeholder':'Votre commentaire'}}) }}
-       <button type="submit" class="btn btn-success">Commenter</button>
-       {{ form_end(commentForm) }}
-       {% else %}
-       <h2>Vous ne pouviez pas ajouter de commentaire, veuillez-vous connectez</h2>
-           <a href="{{ path("security_login") }}" class="btn btn-primary">Connexion</a>
-       {% endif %}
-   </section>
+        </div>
+
+    </div>
+
+    <hr>
+    <div class="container mt-4">
+        <section id="commentaire">
+            <h1>{{ article.comments | length}} Commentaires</h1>
+            {% for comment in article.comments %}
+                <div class="Cold md-4">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="commentaire">
+                                <div class="row">
+                                    <div class="col-3">
+                                        {{ comment.author }}(<small>{{ comment.createdAt | date('d/m/y à h:i') }}</small>
+                                    </div>
+                                    <div class="col">
+                                        {{ comment.Content | raw }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            {% endfor %}
+        </section>
+
+
+            {% if app.user %}
+                {{ form_start(commentForm) }}
+                {{ form_row(commentForm.author,{'attr':{'placeholder':'Votre nom'}}) }}
+                {{ form_row(commentForm.content,{'attr':{'placeholder':'Votre commentaire'}}) }}
+                <button type="submit" class="btn btn-success">Commenter</button>
+                {{ form_end(commentForm) }}
+            {% else %}
+                <h2>Vous ne pouviez pas ajouter de commentaire, veuillez-vous connectez</h2>
+                <a href="{{ path("security_login") }}" class="btn btn-primary">Connexion</a>
+            {% endif %}
+        </section>
+    </div>
+
 
 {% endblock %}
