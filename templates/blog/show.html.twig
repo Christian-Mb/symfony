@@ -31,9 +31,9 @@
                             <div class="commentaire">
                                 <div class="row">
                                     <div class="col-3">
-                                        {{ comment.author }}(<small>{{ comment.createdAt | date('d/m/y à h:i') }}</small>
+                                        {{ comment.author }} <small>( {{ comment.createdAt | date('d/m/y à h:i')  }} )</small>
                                     </div>
-                                    <div class="col">
+                                    <div class="col" align="justify">
                                         {{ comment.Content | raw }}
                                     </div>
                                 </div>
