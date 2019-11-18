@@ -112,7 +112,7 @@ class User implements  UserInterface, \serializable
      *
      *     public function getRoles()
      *     {
-     *         return ['ROLE_USER'];
+     *         return ['ROLE_ADMIN'];
      *     }
      *
      * Alternatively, the roles might be stored on a ``roles`` property,
@@ -124,7 +124,7 @@ class User implements  UserInterface, \serializable
     public function getRoles()
     {
         // TODO: Implement getRoles() method.
-        return ['ROLE_USER'];
+        return ['ROLE_ADMIN'];
     }
 
     /**
@@ -137,6 +137,7 @@ class User implements  UserInterface, \serializable
     public function getSalt()
     {
         // TODO: Implement getSalt() method.
+        return null;
     }
 
     /**
@@ -158,7 +159,7 @@ class User implements  UserInterface, \serializable
      */
     public function serialize()
     {
-
+        //return $this->serialize( [$this->id, $this->email, $this->password] );
     }
 
     /**
@@ -173,5 +174,6 @@ class User implements  UserInterface, \serializable
     public function unserialize($serialized)
     {
         // TODO: Implement unserialize() method.
+        list($this->id,$this->email,$this->password) = $this->unserialize($serialized,['allowed_classes' =>false]);
     }
 }

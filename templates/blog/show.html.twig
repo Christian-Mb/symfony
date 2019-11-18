@@ -8,8 +8,10 @@
                     <article>
                         <h2 align="center">{{ article.title }}</h2>
                         <div class="metadata mb-4" align="center">Ecrit le {{ article.createdAt | date('d/m/Y') }} à {{ article.createdAt | date('H:i')  }} dans la catégorie {{article.category.title}}</div>
-                        <div class="content mb-4" align="center"><img src="{{ article.image }}" alt="">
-                        </div>
+                        <div class="card-img-top embed-responsive mb-4 " align="center">
+                            <div class="img-fluid  embed-reponsive-item" ><img src="{{ article.image }}" alt="">
+                            </div>
+                         </div>
                         <div class="content mb-4"align="justify">
                             {{ article.content | raw }}
                         </div>

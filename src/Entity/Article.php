@@ -5,10 +5,17 @@ namespace App\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Validator\Constraints as Assert;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\ArticleRepository")
+ * @UniqueEntity(fields={"title"},
+ *      errorPath="title",
+ *     message="This title is already use")
+ * @Vich\Uploadable()
  */
 class Article
 {
@@ -31,10 +38,17 @@ class Article
     private $content;
 
     /**
+     *@var string
      * @ORM\Column(type="string", length=255)
      * @Assert\Url()
+     *
      */
     private $image;
+    /**
+     * @var File
+     * @Vich\UploadableField(mapping="property_image",fileNameProperty="image")
+     */
+    private $imageFile;
 
     /**
      * @ORM\Column(type="datetime")
@@ -44,7 +58,7 @@ class Article
 
     /**
      * @ORM\Column(type="string", length=255)
-     * @Assert\Length(min="10",max="255")
+     * @Assert\Length(min="2",max="255")
      */
     private $author;
 
@@ -193,6 +207,30 @@ class Article
 
         return $this;
     }
+
+    public function getImageFile(): ?File
+    {
+        return $this->imageFile;
+    }
+
+    /**
+     * @param File $imageFile
+     * @return Article
+     */
+    public function setImageFile(?File $imageFile): Article
+    {
+        $this->imageFile = $imageFile;
+        if ($this->imageFile instanceof UploadedFile) {
+            $this->updatedAt = new \DateTime('now');
+        }
+        return $this;
+    }
+
+
+
+
+
+
 
 
 

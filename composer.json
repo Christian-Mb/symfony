@@ -22,14 +22,15 @@
         "symfony/orm-pack": "dev-master",
         "symfony/process": "4.4.*",
         "symfony/security-bundle": "4.4.*",
-        "symfony/serializer-pack": "*",
+        "symfony/serializer-pack": "dev-master",
         "symfony/swiftmailer-bundle": "^3.1",
         "symfony/translation": "4.4.*",
         "symfony/twig-pack": "*",
         "symfony/validator": "4.4.*",
         "symfony/web-link": "4.4.*",
         "symfony/web-server-bundle": "4.4.*",
-        "symfony/yaml": "4.4.*"
+        "symfony/yaml": "4.4.*",
+        "vich/uploader-bundle": "^1.10@dev"
     },
     "require-dev": {
         "doctrine/doctrine-fixtures-bundle": "^3.3@dev",
