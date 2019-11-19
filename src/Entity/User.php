@@ -15,7 +15,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  *     message="This email is already use"
  * )
  */
-class User implements  UserInterface, \serializable
+class User implements  UserInterface
 {
     /**
      * @ORM\Id()
@@ -124,7 +124,7 @@ class User implements  UserInterface, \serializable
     public function getRoles()
     {
         // TODO: Implement getRoles() method.
-        return ['ROLE_ADMIN'];
+        return ['ROLE_USER'];
     }
 
     /**
@@ -151,29 +151,5 @@ class User implements  UserInterface, \serializable
         // TODO: Implement eraseCredentials() method.
     }
 
-    /**
-     * String representation of object
-     * @link https://php.net/manual/en/serializable.serialize.php
-     * @return string the string representation of the object or null
-     * @since 5.1.0
-     */
-    public function serialize()
-    {
-        //return $this->serialize( [$this->id, $this->email, $this->password] );
-    }
 
-    /**
-     * Constructs the object
-     * @link https://php.net/manual/en/serializable.unserialize.php
-     * @param string $serialized <p>
-     * The string representation of the object.
-     * </p>
-     * @return void
-     * @since 5.1.0
-     */
-    public function unserialize($serialized)
-    {
-        // TODO: Implement unserialize() method.
-        list($this->id,$this->email,$this->password) = $this->unserialize($serialized,['allowed_classes' =>false]);
-    }
 }
