@@ -29,6 +29,7 @@
         "symfony/validator": "4.4.*",
         "symfony/web-link": "4.4.*",
         "symfony/web-server-bundle": "4.4.*",
+        "symfony/webpack-encore-bundle": "dev-master",
         "symfony/yaml": "4.4.*",
         "vich/uploader-bundle": "^1.10@dev"
     },
