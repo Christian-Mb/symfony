@@ -1,0 +1,422 @@
+# Migration vers Symfony 7.2
+
+Ce fichier contient toutes les instructions nécessaires pour migrer une application Symfony vers la version 7.2, ajouter des tests pour les fonctionnalités d'authentification et mettre à jour le CHANGELOG.md.
+
+## 1. Mise à jour vers Symfony 7.2
+
+### 1.1. Vérifier les prérequis
+
+```bash
+# Vérifier la version de PHP (PHP 8.2+ requis pour Symfony 7.2)
+php -v
+
+# Vérifier la version de Composer
+composer -V
+```
+
+### 1.2. Mettre à jour le fichier composer.json
+
+```bash
+# Mettre à jour les dépendances Symfony vers la version 7.2
+composer require symfony/symfony:^7.2 --no-update
+
+# Mettre à jour les autres dépendances vers les versions compatibles
+composer require symfony/webpack-encore-bundle:^2.0 --no-update
+composer require symfony/debug-bundle:^7.2 --no-update
+composer require symfony/maker-bundle:^1.50 --no-update
+composer require symfony/monolog-bundle:^3.8 --no-update
+composer require symfony/proxy-manager-bridge:^7.2 --no-update
+composer require symfony/twig-bundle:^7.2 --no-update
+composer require symfony/web-profiler-bundle:^7.2 --no-update
+composer require symfony/security-bundle:^7.2 --no-update
+composer require doctrine/doctrine-bundle:^2.10 --no-update
+composer require doctrine/orm:^2.16 --no-update
+composer require twig/extra-bundle:^3.7 --no-update
+```
+
+### 1.3. Installer les dépendances
+
+```bash
+# Mettre à jour les dépendances
+composer update --with-all-dependencies
+```
+
+### 1.4. Nettoyer le cache
+
+```bash
+# Nettoyer le cache de l'application
+php bin/console cache:clear
+```
+
+## 2. Corrections des erreurs de compatibilité
+
+### 2.1. Corriger le namespace Doctrine dans les repositories
+
+```bash
+# Remplacer Doctrine\Common\Persistence par Doctrine\Persistence dans tous les repositories
+find src/Repository -type f -name "*.php" -exec sed -i '' 's/Doctrine\\Common\\Persistence/Doctrine\\Persistence/g' {} \;
+```
+
+### 2.2. Corriger les routes dans les templates
+
+```bash
+# Mettre à jour le template base.html.twig pour utiliser les noms de route corrects
+sed -i '' 's/path(\'blog\')/path(\'blog_index\')/g' templates/base.html.twig
+```
+
+### 2.3. Corriger les erreurs dans les formulaires
+
+```bash
+# Mettre à jour la classe RegistrationType pour utiliser les types de formulaire corrects de Symfony 7.2
+# Vérifier que le formulaire utilise les bonnes classes et options
+```
+
+### 2.4. Corriger security.yaml pour la version 7.2
+
+```bash
+# Mettre à jour security.yaml avec la configuration correcte pour Symfony 7.2
+cat > config/packages/security.yaml << 'EOL'
+security:
+    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
+    password_hashers:
+        App\Entity\User: 'auto'
+    
+    # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+    providers:
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: email
+    
+    # The firewall rules
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        main:
+            lazy: true
+            provider: app_user_provider
+            custom_authenticator: App\Security\LoginFormAuthenticator
+            logout:
+                path: security_logout
+                target: blog_index
+                
+    # Easy way to control access for large sections of your site
+    access_control:
+        - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/profile, roles: ROLE_USER }
+
+    role_hierarchy:
+        ROLE_ADMIN: ROLE_USER
+EOL
+```
+
+### 2.5. Mettre à jour les services.yaml
+
+```bash
+# Vérifier et mettre à jour services.yaml si nécessaire
+cat > config/services.yaml << 'EOL'
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+EOL
+```
+
+## 3. Créer un LoginFormAuthenticator pour l'authentification
+
+```bash
+# Créer le dossier Security s'il n'existe pas
+mkdir -p src/Security
+
+# Créer l'authenticator
+cat > src/Security/LoginFormAuthenticator.php << 'EOL'
+<?php
+
+namespace App\Security;
+
+use App\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Symfony\Component\Security\Core\Security;
+use Symfony\Component\Security\Http\Authenticator\AbstractLoginFormAuthenticator;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\CsrfTokenBadge;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\RememberMeBadge;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
+use Symfony\Component\Security\Http\Authenticator\Passport\Credentials\PasswordCredentials;
+use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
+use Symfony\Component\Security\Http\Util\TargetPathTrait;
+
+class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
+{
+    use TargetPathTrait;
+
+    public const LOGIN_ROUTE = 'security_login';
+
+    private EntityManagerInterface $entityManager;
+    private UrlGeneratorInterface $urlGenerator;
+
+    public function __construct(
+        EntityManagerInterface $entityManager,
+        UrlGeneratorInterface $urlGenerator
+    ) {
+        $this->entityManager = $entityManager;
+        $this->urlGenerator = $urlGenerator;
+    }
+
+    public function authenticate(Request $request): Passport
+    {
+        $email = $request->request->get('email', '');
+        $request->getSession()->set(Security::LAST_USERNAME, $email);
+
+        return new Passport(
+            new UserBadge($email, function ($userIdentifier) {
+                $user = $this->entityManager
+                    ->getRepository(User::class)
+                    ->findOneBy(['email' => $userIdentifier]);
+
+                if (!$user) {
+                    throw new AuthenticationException('Email could not be found.');
+                }
+
+                return $user;
+            }),
+            new PasswordCredentials($request->request->get('password', '')),
+            [
+                new CsrfTokenBadge('authenticate', $request->request->get('_csrf_token')),
+                new RememberMeBadge(),
+            ]
+        );
+    }
+
+    public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
+    {
+        // Mise à jour de la date de dernière connexion si la méthode existe
+        $user = $token->getUser();
+        if (method_exists($user, 'recordLogin')) {
+            $user->recordLogin();
+            $this->entityManager->flush();
+        }
+
+        if ($targetPath = $this->getTargetPath($request->getSession(), $firewallName)) {
+            return new RedirectResponse($targetPath);
+        }
+
+        return new RedirectResponse($this->urlGenerator->generate('blog_index'));
+    }
+
+    protected function getLoginUrl(Request $request): string
+    {
+        return $this->urlGenerator->generate(self::LOGIN_ROUTE);
+    }
+}
+EOL
+```
+
+## 4. Mettre à jour le SecurityController pour l'auto-login après inscription
+
+```bash
+# Mettre à jour le SecurityController
+cat > src/Controller/SecurityController.php << 'EOL'
+<?php
+
+namespace App\Controller;
+
+use App\Entity\User;
+use App\Form\RegistrationType;
+use App\Security\LoginFormAuthenticator;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
+use Symfony\Component\Security\Http\Authentication\UserAuthenticatorInterface;
+
+class SecurityController extends AbstractController
+{
+    #[Route('/inscription', name: 'security_registration')]
+    public function registration(
+        Request $request,
+        EntityManagerInterface $manager,
+        UserPasswordHasherInterface $passwordHasher,
+        UserAuthenticatorInterface $userAuthenticator,
+        LoginFormAuthenticator $authenticator
+    ): Response {
+        $user = new User();
+        $form = $this->createForm(RegistrationType::class, $user);
+
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $hashedPassword = $passwordHasher->hashPassword(
+                $user,
+                $user->getPlainPassword()
+            );
+            $user->setPassword($hashedPassword);
+            $manager->persist($user);
+            $manager->flush();
+
+            // Auto-login après inscription
+            return $userAuthenticator->authenticateUser(
+                $user,
+                $authenticator,
+                $request
+            );
+        }
+
+        return $this->render('security/registration.html.twig', [
+            'form' => $form->createView()
+        ]);
+    }
+
+    #[Route('/connexion', name: 'security_login')]
+    public function login(AuthenticationUtils $authenticationUtils): Response
+    {
+        $error = $authenticationUtils->getLastAuthenticationError();
+        $lastUsername = $authenticationUtils->getLastUsername();
+
+        return $this->render('security/login.html.twig', [
+            'last_username' => $lastUsername,
+            'error' => $error
+        ]);
+    }
+
+    #[Route('/deconnexion', name: 'security_logout')]
+    public function logout()
+    {
+        // Cette méthode peut rester vide - elle sera interceptée par la configuration du firewall
+    }
+}
+EOL
+```
+
+## 5. Mettre à jour le template d'inscription pour utiliser les noms de champs corrects
+
+```bash
+# Mettre à jour le template d'inscription
+cat > templates/security/registration.html.twig << 'EOL'
+{% extends 'base.html.twig' %}
+
+{% block title %}Inscription{% endblock %}
+
+{% block body %}
+    <h1>Inscription sur le site</h1>
+
+    {{ form_start(form) }}
+    {{ form_row(form.username, {'label':'Nom d\'utilisateur','attr':{'placeholder' : 'username'}}) }}
+    {{ form_row(form.email, {'label':'Adresse email','attr':{'placeholder' : 'email'}}) }}
+    {{ form_row(form.plainPassword.first, {'label':'Mot de passe','attr':{'placeholder' : 'password'}}) }}
+    {{ form_row(form.plainPassword.second, {'label':'Confirmation du mot de passe','attr':{'placeholder' : 'confirm password'}}) }}
+    <button type="submit" class="btn btn-success">S'inscrire</button>
+    {{ form_end(form) }}
+{% endblock %}
+EOL
+```
+
+## 6. Ajouter des tests pour l'authentification
+
+### 6.1. Créer la structure des tests
+
+```bash
+# Créer les répertoires pour les tests
+mkdir -p tests/Controller
+mkdir -p tests/Security
+mkdir -p tests/Entity
+```
+
+### 6.2. Créer un test unitaire pour l'entité User
+
+```bash
+# Créer un test unitaire pour l'entité User
+cat > tests/Entity/UserTest.php << 'EOL'
+<?php
+
+namespace App\Tests\Entity;
+
+use App\Entity\User;
+use PHPUnit\Framework\TestCase;
+
+class UserTest extends TestCase
+{
+    public function testUserCreation(): void
+    {
+        $user = new User();
+        $user->setUsername('testuser');
+        $user->setEmail('test@example.com');
+        $user->setPlainPassword('password123');
+
+        $this->assertEquals('testuser', $user->getUsername());
+        $this->assertEquals('test@example.com', $user->getEmail());
+        $this->assertEquals('password123', $user->getPlainPassword());
+    }
+
+    public function testRecordLogin(): void
+    {
+        $user = new User();
+        $lastLogin = $user->getLastLogin();
+        $this->assertNull($lastLogin);
+
+        $user->recordLogin();
+        $this->assertNotNull($user->getLastLogin());
+        $this->assertInstanceOf(\DateTimeImmutable::class, $user->getLastLogin());
+    }
+
+    public function testRoles(): void
+    {
+        $user = new User();
+        $this->assertContains('ROLE_USER', $user->getRoles());
+
+        $user->setRoles(['ROLE_ADMIN']);
+        $this->assertContains('ROLE_ADMIN', $user->getRoles());
+        $this->assertContains('ROLE_USER', $user->getRoles());
+    }
+}
+EOL
+```
+
+### 6.3. Créer un test fonctionnel pour l'authentification
+
+```bash
+# Créer un test fonctionnel pour l'inscription et la connexion
+cat > tests/Controller/SecurityControllerTest.php << 'EOL'
+<?php
+
+namespace App\Tests\Controller;
+
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpFoundation\Response;
+use App\Repository\UserRepository;
+
+class SecurityControllerTest extends WebTestCase
+{
+    public function testRegistrationPage(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/inscription');
+
+        $this->assertResponseIsSuccessful();
+        $
+
