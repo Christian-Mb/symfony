@@ -1,38 +1,99 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello BlogController!{% endblock %}
+{% block title %}Blog - Tous nos articles{% endblock %}
 
 {% block body %}
-    <div class="container mt-4">
-        <h1>Voir tous nos articles</h1>
-        <section class="article">
-
+    <div class="container mt-5">
+        <header class="mb-5 text-center">
+            <h1 class="display-4 fw-bold">Nos articles</h1>
+            <p class="lead text-muted">Découvrez notre collection d'articles et de conseils</p>
+        </header>
+        
+        <div class="row">
             {% for article in articles %}
-                <article>
-                    <div class="cold md-4">
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <h5 class="card-title" style="font-size: 2rem; font-weight: bold" align="center">
-                                    <a href="{{ path('blog_show',{'id':article.id}) }}">{{ article.title }}</a>
-                                </h5>
-                                <h6 class="card-title" style="">
-                                <div
-                                        class="metadata" align="center">Ecrit le {{ article.createdAt | date('D/M/Y') }} à {{ article.createdAt | date('H:i')  }} dans la catégorie {{article.category.title}} par {{ article.author }}
-                                </div>
-
-                                </h6>
-
-
-                                <p class="card-text" align="j">{{ article.content | raw }}</p>
+                <div class="col-md-4 mb-4">
+                    <article class="card h-100 shadow-sm hover-card">
+                        {% if article.image %}
+                            <img src="{{ article.image }}" class="card-img-top" alt="{{ article.title }}">
+                        {% else %}
+                            <img src="https://source.unsplash.com/random/300x200/?{{ article.category.title|url_encode }}" class="card-img-top" alt="{{ article.title }}">
+                        {% endif %}
+                        
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-primary">{{ article.category.title }}</span>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-alt me-1"></i> {{ article.createdAt|date('d M Y') }}
+                                </small>
                             </div>
+                            
+                            <h5 class="card-title">
+                                <a href="{{ path('blog_show', {'id': article.id}) }}" class="text-decoration-none text-dark">{{ article.title }}</a>
+                            </h5>
+                            
+                            <div class="text-muted mb-3 small">
+                                <i class="fas fa-user me-1"></i> Par {{ article.author }}
+                            </div>
+                            
+                            <p class="card-text flex-grow-1">
+                                {{ article.content|striptags|slice(0, 150)|raw }}{% if article.content|length > 150 %}...{% endif %}
+                            </p>
+                            
+                            <a href="{{ path('blog_show', {'id': article.id}) }}" class="btn btn-outline-primary mt-auto">
+                                <i class="fas fa-book-reader me-1"></i> Lire l'article
+                            </a>
                         </div>
+                    </article>
+                </div>
+            {% else %}
+                <div class="col-12 text-center py-5">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Aucun article n'a été publié pour le moment.
                     </div>
-                </article>
+                </div>
             {% endfor %}
-        </section>
+        </div>
+        
+        <!-- Pagination - à activer si nécessaire -->
+        {% if articles|length > 0 and false %}
+            <nav aria-label="Pagination des articles" class="mt-5">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Précédent</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">Suivant</a>
+                    </li>
+                </ul>
+            </nav>
+        {% endif %}
     </div>
 
 
 
+{% block stylesheets %}
+{{ parent() }}
+<style>
+    .hover-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+    
+    .card-img-top {
+        height: 200px;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
 
+{% block javascripts %}
+{{ parent() }}
+{% endblock %}
 {% endblock %}

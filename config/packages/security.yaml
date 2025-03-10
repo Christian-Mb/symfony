@@ -1,6 +1,6 @@
 security:
-    encoders:
-        App\entity\User:
+    password_hashers:
+        App\Entity\User:
             algorithm: bcrypt
     # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
     providers:
@@ -14,16 +14,16 @@ security:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
         main:
-            anonymous: lazy
+            lazy: true
 
             provider: in_database
 
-            form_login:
-                check_path: security_login
+            custom_authenticator: App\Security\LoginFormAuthenticator
+
 
             logout:
                 path: security_logout
-                target: blog
+                target: blog_index
 
 
 

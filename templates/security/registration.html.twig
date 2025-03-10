@@ -1,4 +1,4 @@
-{% extends'base.html.twig' %}
+{% extends 'base.html.twig' %}
 {% block body %}
 
     <div class="container mt-4">
@@ -9,21 +9,20 @@
             <div class="col-md-4">
                 {{ form_row(form.username, {'label':'Nom d\'utilisateur','attr':{'placeholder' : 'username'}}) }}
                 {{ form_row(form.email, {'label':'Adresse email','attr':{'placeholder' : 'email'}}) }}
-                {{ form_row(form.password, {'label':'Mot de passe','attr':{'placeholder' : 'password'}}) }}
-                {{ form_row(form.confirm_password, {'label':'Confirmation du mot de passe','attr':{'placeholder' : 'confirm password'}}) }}
+                {{ form_row(form.plainPassword.first, {'label':'Mot de passe','attr':{'placeholder' : 'password'}}) }}
+                {{ form_row(form.plainPassword.second, {'label':'Confirmation du mot de passe','attr':{'placeholder' : 'confirm password'}}) }}
             </div>
+        </div>
+        
         <div class="row">
-            <div class="cold-md-4">
+            <div class="col-md-4">
                 <img src="" alt="" class="image">
             </div>
-        </div>    
         </div>
 
+        <button type="submit" class="btn btn-success">Inscription</button>
 
-
-            <button type="submit" class="btn btn-success">Inscription</button>
-
-            {{ form_end(form) }}
+        {{ form_end(form) }}
     </div>
 
 {% endblock %}

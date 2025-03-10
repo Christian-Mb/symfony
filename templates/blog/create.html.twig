@@ -1,38 +1,169 @@
 {% extends'base.html.twig' %}
-{% form_theme formArticle 'bootstrap_4_layout.html.twig' %}
+{% form_theme formArticle 'bootstrap_5_layout.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .form-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+        .form-card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        .form-section {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        .form-section:last-of-type {
+            border-bottom: none;
+        }
+        .section-title {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+    </style>
+{% endblock %}
 
 {% block body %}
-    <div class="container mt-4">
-        <div class="cold md-4">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h1>Créer un article</h1>
-                    {{ form_start(formArticle) }}
-
-                    {{ form_row(formArticle.title,{'attr': {'placeholder':"Titre de l'article"}}) }}
-                    {{ form_row(formArticle.category) }}
-                    <div class=" toolbar enabledtoolbar">
-                        {{ form_row(formArticle.content,{'attr': {'placeholder':"Contenu de l'article"}}) }}
-
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card form-card mb-5">
+                    <div class="card-header bg-white py-3">
+                        <h1 class="h3 mb-0 text-center">
+                            <i class="fas fa-edit me-2"></i>
+                            {% if editMode %}Modifier l'article{% else %}Créer un nouvel article{% endif %}
+                        </h1>
                     </div>
-                    {{ form_row(formArticle.imageFile) }}
-                    {{ form_row(formArticle.author,{'attr': {'placeholder':"Auteur de l'article"}}) }}
-                    {{ form_row(formArticle.genreLitteraire,{'attr': {'placeholder':"Genre de l'article"}}) }}
-                    <button type="submit" class="btn btn-success">
-                        {% if editMode %}
-                            Enregistrer les modifications
-                        {% else %}
-                            Ajouter l'article
-                        {% endif %}
-                    </button>
+                    <div class="card-body p-4">
+                        {{ form_start(formArticle) }}
 
-                    {{ form_end(formArticle) }}
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-info-circle me-2"></i>Informations générales
+                            </div>
+                            {{ form_row(formArticle.title,{
+                                'attr': {
+                                    'placeholder': "Titre de l'article",
+                                    'class': 'form-control form-control-lg'
+                                },
+                                'label_attr': {
+                                    'class': 'text-primary'
+                                }
+                            }) }}
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form_row(formArticle.category, {
+                                        'label_attr': {'class': 'text-primary'}
+                                    }) }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form_row(formArticle.genreLitteraire,{
+                                        'attr': {'placeholder':"Genre de l'article"},
+                                        'label_attr': {'class': 'text-primary'}
+                                    }) }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-paragraph me-2"></i>Contenu de l'article
+                            </div>
+                            <div class="toolbar enabledtoolbar">
+                                {{ form_row(formArticle.content,{
+                                    'attr': {
+                                        'placeholder':"Contenu de l'article",
+                                        'rows': 10,
+                                        'style': 'min-height: 200px'
+                                    },
+                                    'label_attr': {'class': 'text-primary'}
+                                }) }}
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-image me-2"></i>Image de l'article
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form_label(formArticle.imageFile, null, {'label_attr': {'class': 'text-primary'}}) }}
+                                {{ form_widget(formArticle.imageFile, {'attr': {'class': 'form-control', 'id': 'article-image-input'}}) }}
+                                {{ form_help(formArticle.imageFile) }}
+                                {{ form_errors(formArticle.imageFile) }}
+                            </div>
+                            
+                            <div class="mt-3 text-center">
+                                <img id="image-preview" class="image-preview" src="#" alt="Prévisualisation de l'image" />
+                                <p class="text-muted small mt-2">L'image sera affichée ici après sélection</p>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas {% if editMode %}fa-save{% else %}fa-plus-circle{% endif %} me-2"></i>
+                                {% if editMode %}
+                                    Enregistrer les modifications
+                                {% else %}
+                                    Publier l'article
+                                {% endif %}
+                            </button>
+                            <a href="{{ path('blog_index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+                            </a>
+                        </div>
+
+                        {{ form_end(formArticle) }}
+                    </div>
                 </div>
-
             </div>
         </div>
-
     </div>
+{% endblock %}
 
-
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageInput = document.getElementById('article-image-input');
+            const imagePreview = document.getElementById('image-preview');
+            
+            // Function to handle image preview
+            imageInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        imagePreview.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                    };
+                    
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+            
+            // If we're in edit mode and there's already an image, try to display it
+            {% if editMode and formArticle.vars.data.image %}
+                // If there's an existing image path, try to display it
+                imagePreview.src = "{{ asset('uploads/property_image/' ~ formArticle.vars.data.image) }}";
+                imagePreview.style.display = 'block';
+            {% endif %}
+        });
+    </script>
 {% endblock %}

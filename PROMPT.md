@@ -67,6 +67,31 @@ private string $author;
 private User $author;
 ```
 
+### Entity String Representation
+
+When entities are used in templates, form choices, logging, or string concatenation, PHP will try to convert objects to strings. Without a proper string representation, this results in the error:
+```
+Object of class [Entity Class] could not be converted to string
+```
+
+To prevent this, always implement a `__toString()` method in your entities, especially those used in relationships:
+
+```php
+// In User entity
+public function __toString(): string
+{
+    return $this->username ?? $this->email ?? 'User #'.$this->id;
+}
+```
+
+Benefits of implementing `__toString()`:
+- Prevents errors when entities are rendered in templates or form select fields
+- Works with Doctrine proxy objects (critical for lazy-loaded entities)
+- Simplifies debugging by providing meaningful object representation
+- Allows entities to be used directly in string contexts
+
+Remember to return a non-empty string, and to handle cases where properties might be null.
+
 ## Creating Migrations
 
 ### Generate a Migration

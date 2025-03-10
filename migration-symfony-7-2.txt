@@ -1,3 +1,166 @@
+# Migration vers Symfony 7.2 - Guide complet
+
+## 1. Mise à jour des dépendances
+
+```bash
+# Mettre à jour Symfony et toutes les dépendances à leurs dernières versions
+composer update
+
+# Installer les outils de test si nécessaire
+composer require --dev symfony/test-pack symfony/browser-kit symfony/css-selector
+```
+
+## 2. Corrections de compatibilité
+
+### Namespaces Doctrine
+Remplacer les imports obsolètes dans tous les fichiers Repository :
+```bash
+find src/Repository -name "*.php" -exec sed -i '' 's/Doctrine\\Common\\Persistence\\ManagerRegistry/Doctrine\\Persistence\\ManagerRegistry/g' {} \;
+```
+
+### Corrections des templates Twig
+Vérifier que tous les templates utilisent les bons noms de routes :
+```bash
+# Corriger la route 'blog' en 'blog_index' dans les templates
+find templates -name "*.twig" -exec sed -i '' 's/path('"'"'blog'"'"')/path('"'"'blog_index'"'"')/g' {} \;
+```
+
+### DataFixtures
+Corriger les fixtures pour utiliser correctement les fonctions PHP :
+```php
+// Dans src/DataFixtures/ArticleFixtures.php
+// Remplacer
+$content = '<p>'.join($faker->paragraphs(6), '<p></p>').'</p>';
+// Par
+$content = '<p>'.join('<p></p>', $faker->paragraphs(6)).'</p>';
+
+// Et convertir DateTime en DateTimeImmutable pour les entités qui l'exigent
+->setCreatedAt(\DateTimeImmutable::createFromMutable($faker->dateTimeBetween('-'.$days.' days')))
+```
+
+## 3. Ajout de tests d'intégration
+
+### Test pour le SecurityController
+
+Créer le fichier tests/Controller/SecurityControllerTest.php :
+
+```php
+<?php
+
+namespace App\Tests\Controller;
+
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Repository\UserRepository;
+use App\Entity\User;
+
+class SecurityControllerTest extends WebTestCase
+{
+    public function testRegistration(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/inscription');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextContains('h1', 'Inscription');
+
+        // Test de soumission du formulaire d'inscription
+        $client->submitForm('S\'inscrire', [
+            'registration[username]' => 'test_user_'.uniqid(),
+            'registration[email]' => 'test'.uniqid().'@example.com',
+            'registration[plainPassword][first]' => 'password123',
+            'registration[plainPassword][second]' => 'password123',
+        ]);
+
+        // Vérifier la redirection après inscription
+        $this->assertResponseRedirects('/blog');
+        $client->followRedirect();
+        
+        // Vérifier qu'on est bien sur la page du blog
+        $this->assertSelectorTextContains('h1', 'Articles récents');
+        
+        // Vérifier qu'on est bien connecté (par exemple en vérifiant la présence d'un lien de déconnexion)
+        $this->assertSelectorExists('a:contains("Déconnexion")');
+    }
+
+    public function testLogin(): void
+    {
+        $client = static::createClient();
+        
+        // Créer un utilisateur de test si nécessaire
+        $userRepository = static::getContainer()->get(UserRepository::class);
+        $testUser = $userRepository->findOneByEmail('admin@admin.fr');
+        
+        if (!$testUser) {
+            $entityManager = static::getContainer()->get('doctrine')->getManager();
+            
+            $testUser = new User();
+            $testUser->setUsername('admin')
+                ->setEmail('admin@admin.fr')
+                ->setPassword(static::getContainer()->get('security.user_password_hasher')->hashPassword(
+                    $testUser,
+                    'adminpass'
+                ));
+                
+            $entityManager->persist($testUser);
+            $entityManager->flush();
+        }
+        
+        // Se connecter avec l'utilisateur de test
+        $client->request('GET', '/login');
+        $client->submitForm('Connexion', [
+            '_username' => 'admin@admin.fr',
+            '_password' => 'adminpass',
+        ]);
+        
+        // Vérifier la redirection après connexion
+        $this->assertResponseRedirects('/blog');
+        $client->followRedirect();
+        
+        // Vérifier qu'on est correctement connecté
+        $this->assertSelectorTextContains('a.nav-link', 'Déconnexion');
+    }
+}
+```
+
+## 4. Mise à jour du CHANGELOG.md
+
+Ajouter les entrées suivantes au fichier CHANGELOG.md sous une nouvelle version ou "Unreleased" :
+
+```markdown
+## [Unreleased] ou ## [7.2.0] - YYYY-MM-DD
+
+### Added
+- Ajout d'un authenticator personnalisé pour gérer la connexion (LoginFormAuthenticator)
+- Auto-login des utilisateurs après inscription
+- Tests d'intégration pour les fonctionnalités d'authentification
+
+### Changed
+- Migration vers Symfony 7.2
+- Mise à jour des namespaces Doctrine (Common\Persistence vers Persistence)
+
+### Fixed
+- Correction des routes dans les templates (blog -> blog_index)
+- Correction du formulaire d'inscription (plainPassword.first et plainPassword.second)
+- Correction des DataFixtures pour la compatibilité avec DateTimeImmutable
+- Correction de l'ordre des paramètres dans la fonction join() des fixtures
+```
+
+## 5. Vérification finale
+
+```bash
+# Exécuter les tests
+php bin/phpunit
+
+# Vérifier que l'application fonctionne correctement
+symfony server:start -d
+symfony open:local
+
+# Vérifier les routes existantes
+php bin/console debug:router
+```
+
+Si tout fonctionne correctement, votre migration vers Symfony 7.2 est terminée !
+
 # Migration vers Symfony 7.2
 
 Ce fichier contient toutes les instructions nécessaires pour migrer une application Symfony vers la version 7.2, ajouter des tests pour les fonctionnalités d'authentification et mettre à jour le CHANGELOG.md.
@@ -419,4 +582,58 @@ class SecurityControllerTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
         $
+585|
 
+## 7. Corrections récentes importantes
+
+### 7.1. Modification de l'entité Article - Relation avec User
+
+L'entité Article utilisait initialement une propriété `author` de type string. Cette configuration a été modifiée pour utiliser une relation ManyToOne avec l'entité User, afin de mieux représenter la relation entre articles et utilisateurs.
+
+```php
+// Avant - Dans Article.php
+private string $author;
+
+// Après - Dans Article.php
+#[ORM\ManyToOne(targetEntity: User::class)]
+#[ORM\JoinColumn(nullable: false)]
+private ?User $author = null;
+```
+
+N'oubliez pas de créer et d'exécuter une migration pour mettre à jour la structure de la base de données :
+
+```bash
+# Créer une migration pour la modification de la propriété author
+php bin/console make:migration
+
+# Exécuter la migration
+php bin/console doctrine:migrations:migrate
+```
+
+### 7.2. Correction du form type pour l'inscription
+
+Le champ `plainPassword` dans le formulaire d'inscription (RegistrationType) doit être explicitement marqué comme non mappé, car il n'est pas stocké directement dans la base de données.
+
+```php
+// Dans RegistrationType.php, assurez-vous que plainPassword est correctement configuré
+->add('plainPassword', RepeatedType::class, [
+    'type' => PasswordType::class,
+    'mapped' => false,  // Important: doit être false pour éviter les erreurs de persistance
+    'first_options' => ['label' => 'Mot de passe'],
+    'second_options' => ['label' => 'Répétez votre mot de passe'],
+    'invalid_message' => 'Les mots de passe ne correspondent pas'
+])
+```
+
+Ensuite, dans le contrôleur d'inscription (SecurityController), le mot de passe doit être récupéré manuellement :
+
+```php
+// Dans SecurityController.php
+$plainPassword = $form->get('plainPassword')->getData();
+$hashedPassword = $passwordHasher->hashPassword($user, $plainPassword);
+$user->setPassword($hashedPassword);
+```
+
+Ces modifications garantissent la sécurité des mots de passe et maintiennent les bonnes pratiques de développement Symfony.
+
+586|
